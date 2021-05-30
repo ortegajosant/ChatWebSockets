@@ -1,0 +1,23 @@
+{
+  "name": "videochatwebsockets",
+  "version": "1.0.0",
+  "description": "videochattest",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ortegajosant/videoChatWebSockets.git"
+  },
+  "author": "ortegajosant",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ortegajosant/videoChatWebSockets/issues"
+  },
+  "homepage": "https://github.com/ortegajosant/videoChatWebSockets#readme",
+  "dependencies": {
+    "websocket": "^1.0.34"
+  }
+}
