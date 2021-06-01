@@ -12,86 +12,95 @@ class Chat extends Component {
             <body>
                 <div id="content"></div>
                 <div>
-                    <span id="status">Connecting...</span>
+                    <span id="status">Conectando...</span>
                     <input type="text" id="input" disabled="disabled" />
                 </div>
             </body>
-            
+
         );
     }
 
-    run () {
-        // for better performance - to avoid searching in DOM
-        var content = $('#content');
-        var input = $('#input');
-        var status = $('#status');
-        // my color assigned by the server
-        var myColor = false;
-        // my name sent to the server
-        var myName = false;
-        // if user is running mozilla then use it's built-in WebSocket
+    checkWS(content, input) {
+
+        // Se utiliza el websocket que proviene del Browser ej: Mozilla
         window.WebSocket = window.WebSocket || window.MozWebSocket;
-        // if browser doesn't support WebSocket, just show
-        // some notification and exit
+
         if (!window.WebSocket) {
             content.html($('<p>',
-                { text: 'Sorry, but your browser doesn\'t support WebSocket.' }
+                { text: 'Lo sentimos, el navegador no soporta WebSockets.' }
             ));
             input.hide();
             $('span').hide();
-            return;
+            return false;
         }
-        // open connection
+
+        return true;
+
+    }
+
+    run() {
+        var content = $('#content');
+        var input = $('#input');
+
+        if (!this.checkWS(content, input))
+            return
+
+        
+        var status = $('#status');
+
+        var myColor = false;
+
+        var myName = false;
+
+        // Abrir la conexión
         var connection = new WebSocket('ws:/192.168.0.10:1337');
         connection.onopen = function () {
-            // first we want users to enter their names
+            // Se ingresa el nombre de usuario
             input.removeAttr('disabled');
-            status.text('Choose name:');
+            status.text('Nombre de Usuario:');
         };
+
         connection.onerror = function (error) {
-            // just in there were some problems with connection...
+
             content.html($('<p>', {
-                text: 'Sorry, but there\'s some problem with your '
-                    + 'connection or the server is down.'
+                text: 'Lo sentimos, hay un problema de conexión o con el servidor'
             }));
         };
-        // most important part - incoming messages
+        // Mensajes entrantes
         connection.onmessage = function (message) {
-            // try to parse JSON message. Because we know that the server
-            // always returns JSON this should work without any problem but
-            // we should make sure that the massage is not chunked or
-            // otherwise damaged.
+            // Se parsea el JSON
             try {
                 var json = JSON.parse(message.data);
             } catch (e) {
                 console.log('Invalid JSON: ', message.data);
                 return;
             }
-            // NOTE: if you're not sure about the JSON structure
-            // check the server source code above
-            // first response from the server with user's color
+
+
             if (json.type === 'color') {
                 myColor = json.data;
                 status.text(myName + ': ').css('color', myColor);
                 input.removeAttr('disabled').focus();
-                // from now user can start sending messages
-            } else if (json.type === 'history') { // entire message history
-                // insert every single message to the chat window
+
+            } else if (json.type === 'history') {
+                // Se agregan los mensajes al chat
                 for (var i = 0; i < json.data.length; i++) {
                     addMessage(json.data[i].author, json.data[i].text,
                         json.data[i].color, new Date(json.data[i].time));
                 }
-            } else if (json.type === 'message') { // it's a single message
+
+            } else if (json.type === 'message') {
                 // let the user write another message
                 input.removeAttr('disabled');
                 addMessage(json.data.author, json.data.text,
                     json.data.color, new Date(json.data.time));
             } else {
-                console.log('Hmm..., I\'ve never seen JSON like this:', json);
+                console.log('Revisar la estructura del JSON:', json);
             }
         };
+
         /**
-         * Send message when user presses Enter key
+         * Enviar mensajes al presionar la tecla _Enter_
          */
         input.keydown(function (e) {
             if (e.keyCode === 13) {
@@ -99,32 +108,33 @@ class Chat extends Component {
                 if (!msg) {
                     return;
                 }
-                // send the message as an ordinary text
+
                 connection.send(msg);
                 $(this).val('');
-                // disable the input field to make the user wait until server
-                // sends back response
+                
+                // Deshabilitar el envío hasta que el servidor lo procese
                 input.attr('disabled', 'disabled');
-                // we know that the first message sent from a user their name
+                
+                // Se asigna el nombre de usuario en caso de que no lo tenga
                 if (myName === false) {
                     myName = msg;
                 }
             }
         });
+
         /**
-         * This method is optional. If the server wasn't able to
-         * respond to the in 3 seconds then show some error message 
-         * to notify the user that something is wrong.
+         * Este intervalo es para verificar que la conexión con el servidor se mantiene
          */
         setInterval(function () {
             if (connection.readyState !== 1) {
                 status.text('Error');
                 input.attr('disabled', 'disabled').val(
-                    'Unable to communicate with the WebSocket server.');
+                    'Imposible comunicarse con el servidor.');
             }
         }, 3000);
+
         /**
-         * Add message to the chat window
+         * Se añade el mensaje a al ventana del chat
          */
         function addMessage(author, message, color, dt) {
             content.prepend('<p><span style="color:' + color + '">'
