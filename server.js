@@ -60,6 +60,7 @@ function runWebSocketServer() {
 
         // Se acepta la conexión
         var connection = request.accept(null, request.origin);
+        console.log('Cliente:', connection.remoteAddress);
 
         // Se extrae el índice del cliente para removerlo cuando se desconecta
         var index = clients.push(connection) - 1;
@@ -87,7 +88,7 @@ function runWebSocketServer() {
                     connection.sendUTF(
                         JSON.stringify({ type: 'color', data: userColor }));
                     console.log(' Usuario: ' + userName + ' de color ' + userColor);
-                
+
                 } else { // Recibir, archivar y compartir el mensaje
                     console.log(' Received Message from ' + userName + ': ' + message.utf8Data);
 
@@ -110,11 +111,11 @@ function runWebSocketServer() {
             }
         });
 
-        
+
         // Desconexión de usuario
         connection.on('close', function (connection) {
             if (userName !== false && userColor !== false) {
-                console.log(connection.remoteAddress + " disconnected.");
+                console.log(userName + " " + userColor + " disconnected.");
                 // Quitar usuario de la lista
                 clients.splice(index, 1);
                 colors.push(userColor);
@@ -122,5 +123,6 @@ function runWebSocketServer() {
         });
     });
 }
+
 
 runWebSocketServer();
